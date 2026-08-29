@@ -1,5 +1,6 @@
 package com.hackerapps.c2k.ui.screen.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -71,6 +73,7 @@ fun SettingsScreen(
     val ttsAvailableOnDevice by vm.ttsAvailableOnDevice.collectAsStateWithLifecycle()
     val weightKg             by vm.weightKg.collectAsStateWithLifecycle()
     val weightUnit           by vm.weightUnit.collectAsStateWithLifecycle()
+    val currentLanguageTag   by vm.currentLanguageTag.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -97,6 +100,12 @@ fun SettingsScreen(
                 .imePadding()
                 .verticalScroll(rememberScrollState())
         ) {
+            LanguageSetting(
+                currentTag = currentLanguageTag,
+                onTagChange = vm::setLanguage
+            )
+            HorizontalDivider()
+
             SettingsToggle(
                 label = stringResource(R.string.settings_tts_enabled),
                 checked = ttsEnabled,
@@ -269,6 +278,57 @@ fun SettingsScreen(
             )
         }
     }
+}
+
+@Composable
+private fun LanguageSetting(
+    currentTag: String,
+    onTagChange: (String) -> Unit
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    val languages = listOf(
+        "" to R.string.language_system_default,
+        "en" to R.string.language_en,
+        "de" to R.string.language_de,
+        "es" to R.string.language_es,
+        "fr" to R.string.language_fr,
+        "gl" to R.string.language_gl,
+        "pt-BR" to R.string.language_pt_br,
+        "ru" to R.string.language_ru,
+        "tr" to R.string.language_tr
+    )
+
+    val currentLabelRes = languages.find { it.first == currentTag }?.second ?: R.string.language_system_default
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_language)) },
+        supportingContent = { Text(stringResource(currentLabelRes)) },
+        trailingContent = {
+            Box {
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null
+                )
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    languages.forEach { (tag, labelRes) ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(labelRes)) },
+                            onClick = {
+                                onTagChange(tag)
+                                showMenu = false
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        modifier = Modifier
+            .testTag("setting_language")
+            .clickable { showMenu = true }
+    )
 }
 
 @Composable

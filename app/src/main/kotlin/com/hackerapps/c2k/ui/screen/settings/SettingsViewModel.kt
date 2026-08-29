@@ -1,9 +1,13 @@
 package com.hackerapps.c2k.ui.screen.settings
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.hackerapps.c2k.data.prefs.UserPreferences
@@ -13,6 +17,21 @@ import com.hackerapps.c2k.engine.tts.TtsManager
 class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
     private val prefs = UserPreferences(app)
+
+    private val _currentLanguageTag = MutableStateFlow(
+        AppCompatDelegate.getApplicationLocales().toLanguageTags()
+    )
+    val currentLanguageTag = _currentLanguageTag.asStateFlow()
+
+    fun setLanguage(tag: String) {
+        val appLocale: LocaleListCompat = if (tag.isEmpty()) {
+            LocaleListCompat.getEmptyLocaleList()
+        } else {
+            LocaleListCompat.forLanguageTags(tag)
+        }
+        AppCompatDelegate.setApplicationLocales(appLocale)
+        _currentLanguageTag.value = tag
+    }
 
     val ttsEnabled = prefs.ttsEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
