@@ -100,7 +100,9 @@ class SettingsScreenTest {
         setContent()
         composeRule.onNodeWithTag("toggle_gps_enabled").assertIsOn()
 
-        composeRule.onNodeWithTag("toggle_gps_enabled").performClick()
+        // The new language picker at the top of the screen pushes this toggle below the fold,
+        // so it needs a scroll before performClick() can land on it.
+        composeRule.onNodeWithTag("toggle_gps_enabled").performScrollTo().performClick()
 
         composeRule.waitUntilAssertion {
             composeRule.onNodeWithTag("toggle_gps_enabled").assertIsOff()
