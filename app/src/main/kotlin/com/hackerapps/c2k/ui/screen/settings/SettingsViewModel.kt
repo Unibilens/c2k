@@ -23,6 +23,10 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     )
     val currentLanguageTag = _currentLanguageTag.asStateFlow()
 
+    fun refreshLanguage() {
+        _currentLanguageTag.value = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+    }
+
     fun setLanguage(tag: String) {
         val appLocale: LocaleListCompat = if (tag.isEmpty()) {
             LocaleListCompat.getEmptyLocaleList()

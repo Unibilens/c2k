@@ -1,6 +1,5 @@
 package com.hackerapps.c2k.ui.screen.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,6 +74,10 @@ fun SettingsScreen(
     val weightKg             by vm.weightKg.collectAsStateWithLifecycle()
     val weightUnit           by vm.weightUnit.collectAsStateWithLifecycle()
     val currentLanguageTag   by vm.currentLanguageTag.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        vm.refreshLanguage()
+    }
 
     Scaffold(
         topBar = {
@@ -285,7 +289,6 @@ private fun LanguageSetting(
     currentTag: String,
     onTagChange: (String) -> Unit
 ) {
-    var showMenu by remember { mutableStateOf(false) }
     val languages = listOf(
         "" to R.string.language_system_default,
         "en" to R.string.language_en,
@@ -302,32 +305,25 @@ private fun LanguageSetting(
 
     ListItem(
         headlineContent = { Text(stringResource(R.string.settings_language)) },
-        supportingContent = { Text(stringResource(currentLabelRes)) },
         trailingContent = {
-            Box {
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = null
-                )
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    languages.forEach { (tag, labelRes) ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(labelRes)) },
-                            onClick = {
-                                onTagChange(tag)
-                                showMenu = false
-                            }
+            SettingsDropdownPicker(
+                items = languages,
+                itemLabel = { stringResource(it.second) },
+                onItemSelected = { onTagChange(it.first) },
+                anchor = { onClick ->
+                    TextButton(
+                        onClick = onClick,
+                        modifier = Modifier.testTag("button_language")
+                    ) {
+                        Text(stringResource(currentLabelRes))
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = null
                         )
                     }
                 }
-            }
-        },
-        modifier = Modifier
-            .testTag("setting_language")
-            .clickable { showMenu = true }
+            )
+        }
     )
 }
 
@@ -338,7 +334,6 @@ private fun WeightSetting(
     onWeightChange: (Float) -> Unit,
     onUnitChange: (WeightUnit) -> Unit
 ) {
-    var showUnitMenu by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     // null = "showing whatever weightKg currently resolves to" (stays reactive to the async
     // DataStore load); becomes non-null the moment the user types, so their in-progress edit
@@ -373,28 +368,19 @@ private fun WeightSetting(
                             .testTag("field_weight")
                     )
                     Spacer(Modifier.width(8.dp))
-                    Box {
-                        TextButton(
-                            onClick = { showUnitMenu = true },
-                            modifier = Modifier.testTag("button_weight_unit")
-                        ) {
-                            Text(stringResource(weightUnit.labelRes))
-                        }
-                        DropdownMenu(
-                            expanded = showUnitMenu,
-                            onDismissRequest = { showUnitMenu = false }
-                        ) {
-                            WeightUnit.entries.forEach { unit ->
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(unit.labelRes)) },
-                                    onClick = {
-                                        showUnitMenu = false
-                                        onUnitChange(unit)
-                                    }
-                                )
+                    SettingsDropdownPicker(
+                        items = WeightUnit.entries,
+                        itemLabel = { stringResource(it.labelRes) },
+                        onItemSelected = onUnitChange,
+                        anchor = { onClick ->
+                            TextButton(
+                                onClick = onClick,
+                                modifier = Modifier.testTag("button_weight_unit")
+                            ) {
+                                Text(stringResource(weightUnit.labelRes))
                             }
                         }
-                    }
+                    )
                 }
                 Text(
                     stringResource(R.string.settings_weight_hint),
@@ -469,4 +455,31 @@ private fun SettingsToggle(
             )
         }
     )
+}
+
+@Composable
+private fun <T> SettingsDropdownPicker(
+    items: List<T>,
+    itemLabel: @Composable (T) -> String,
+    onItemSelected: (T) -> Unit,
+    anchor: @Composable (onClick: () -> Unit) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        anchor { expanded = true }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            items.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(itemLabel(item)) },
+                    onClick = {
+                        expanded = false
+                        onItemSelected(item)
+                    }
+                )
+            }
+        }
+    }
 }

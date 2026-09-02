@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
+import com.hackerapps.c2k.utils.localized
 
 class TtsManager(
     context: Context,
@@ -26,7 +27,7 @@ class TtsManager(
         private const val TAG = "TtsManager"
     }
 
-    private val context: Context = context.applicationContext
+    private val context: Context = context.applicationContext.localized()
     private val tts = TextToSpeech(this.context, this)
     private var ready = false
     private var pendingAnnouncement: TtsAnnouncement? = null
